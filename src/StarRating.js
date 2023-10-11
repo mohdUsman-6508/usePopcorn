@@ -1,4 +1,12 @@
 import { useState } from "react";
+import PropTypes from "prop-types";
+
+StarRating.propTypes = {
+  maxRating: PropTypes.number,
+  size: PropTypes.number,
+  ratingDefault: PropTypes.number,
+  setState: PropTypes.func,
+};
 
 const starContainer = {
   display: "flex",
