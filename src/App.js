@@ -1,5 +1,8 @@
-import { hasFormSubmit } from "@testing-library/user-event/dist/utils";
-import { useState } from "react";
+import {
+  hasFormSubmit,
+  setSelectionRange,
+} from "@testing-library/user-event/dist/utils";
+import { useEffect, useState } from "react";
 
 const tempMovieData = [
   {
@@ -50,9 +53,27 @@ const tempWatchedData = [
 
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
+const KEY = "dc928c08";
 
 export default function App() {
-  const [movies, setMovies] = useState(tempMovieData);
+  const [movies, setMovies] = useState([]);
+  const [isLoad, setIsLoad] = useState(false);
+
+  /////////////useEffect
+  useEffect(function () {
+    async function getMovies() {
+      setIsLoad(true);
+      const res = await fetch(
+        `http://www.omdbapi.com/?apikey=${KEY}&s=star wars`
+      );
+      const data = await res.json();
+      setMovies(data.Search);
+      setIsLoad(false);
+      // .then((res) => res.json())
+      // .then((data) => setMovies(data.Search));
+    }
+    getMovies();
+  }, []);
   return (
     <>
       <Navbar>
@@ -62,12 +83,15 @@ export default function App() {
       </Navbar>
       <Main>
         <LeftBox>
-          <LeftMovieList movies={movies} />
+          {isLoad ? <Loader /> : <LeftMovieList movies={movies} />}
         </LeftBox>
         <RightBox />
       </Main>
     </>
   );
+}
+function Loader() {
+  return <p className="loader">Loading....</p>;
 }
 ///////////////////////////
 ////////////////////Navbar*************************************************************************** */
@@ -111,7 +135,7 @@ function Main({ children }) {
 
 ///////////////////////////
 function RightBox() {
-  const [watched, setWatched] = useState(tempWatchedData);
+  const [watched, setWatched] = useState([]);
   const [isOpen2, setIsOpen2] = useState(true);
 
   return (
