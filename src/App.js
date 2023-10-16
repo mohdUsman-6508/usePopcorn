@@ -1,7 +1,3 @@
-import {
-  hasFormSubmit,
-  setSelectionRange,
-} from "@testing-library/user-event/dist/utils";
 import { useEffect, useState } from "react";
 
 const tempMovieData = [
@@ -58,19 +54,31 @@ const KEY = "dc928c08";
 export default function App() {
   const [movies, setMovies] = useState([]);
   const [isLoad, setIsLoad] = useState(false);
+  const [error, setError] = useState("");
 
   /////////////useEffect
   useEffect(function () {
     async function getMovies() {
-      setIsLoad(true);
-      const res = await fetch(
-        `http://www.omdbapi.com/?apikey=${KEY}&s=star wars`
-      );
-      const data = await res.json();
-      setMovies(data.Search);
-      setIsLoad(false);
-      // .then((res) => res.json())
-      // .then((data) => setMovies(data.Search));
+      try {
+        setIsLoad(true);
+        const res = await fetch(
+          `http://www.omdbapi.com/?apikey=${KEY}&s=osman`
+        );
+
+        if (!res.ok) throw new Error("something went wrong!");
+        const data = await res.json();
+
+        if (data.Response === "False") throw new Error("Movie not found!");
+        setMovies(data.Search);
+
+        // .then((res) => res.json())
+        // .then((data) => setMovies(data.Search));
+      } catch (err) {
+        // console.log(err.message);
+        setError(err.message);
+      } finally {
+        setIsLoad(false);
+      }
     }
     getMovies();
   }, []);
@@ -83,11 +91,23 @@ export default function App() {
       </Navbar>
       <Main>
         <LeftBox>
-          {isLoad ? <Loader /> : <LeftMovieList movies={movies} />}
+          {/* {isLoad ? <Loader /> : <LeftMovieList movies={movies} />} */}
+          {isLoad && <Loader />}
+          {!isLoad && !error && <LeftMovieList movies={movies} />}
+          {error && <ErrorMessage error={error} />}
         </LeftBox>
         <RightBox />
       </Main>
     </>
+  );
+}
+
+function ErrorMessage({ error }) {
+  return (
+    <p className="error">
+      <span>⚠️</span>
+      {error}
+    </p>
   );
 }
 function Loader() {
