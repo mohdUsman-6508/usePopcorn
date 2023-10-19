@@ -55,48 +55,93 @@ export default function App() {
   const [movies, setMovies] = useState([]);
   const [isLoad, setIsLoad] = useState(false);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("Batman");
+  const [selectId, setSelectedId] = useState(null);
+
+  function onSelectId(id) {
+    setSelectedId((selectId) => (selectId ? null : id));
+    // console.log(selectId);
+  }
+
+  function onCloseDetails() {
+    setSelectedId(null);
+  }
 
   /////////////useEffect
-  useEffect(function () {
-    async function getMovies() {
-      try {
-        setIsLoad(true);
-        const res = await fetch(
-          `http://www.omdbapi.com/?apikey=${KEY}&s=osman`
-        );
+  useEffect(
+    function () {
+      async function getMovies() {
+        try {
+          setIsLoad(true);
+          const res = await fetch(
+            `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+          );
 
-        if (!res.ok) throw new Error("something went wrong!");
-        const data = await res.json();
+          if (!res.ok) throw new Error("something went wrong!");
+          const data = await res.json();
 
-        if (data.Response === "False") throw new Error("Movie not found!");
-        setMovies(data.Search);
+          if (data.Response === "False") throw new Error("Movie not found!");
+          setMovies(data.Search);
 
-        // .then((res) => res.json())
-        // .then((data) => setMovies(data.Search));
-      } catch (err) {
-        // console.log(err.message);
-        setError(err.message);
-      } finally {
-        setIsLoad(false);
+          // .then((res) => res.json())
+          // .then((data) => setMovies(data.Search));
+        } catch (err) {
+          // console.log(err.message);
+          setError(err.message);
+        } finally {
+          setIsLoad(false);
+          setError("");
+        }
       }
-    }
-    getMovies();
-  }, []);
+
+      if (query.length < 3) {
+        setError("");
+        setMovies([]);
+        return;
+      }
+
+      getMovies();
+    },
+    [query]
+  );
+
+  //// FOR FUTURE REFERENCE
+  /// DEPENDENCY ARRAY IS VERY IMPORTANT HERE IT PLAYS A BIG ROLE::
+
+  // useEffect(function () {
+  //   console.log(
+  //     "it will render everytime,at initial render after browser paint,whenever state changes"
+  //   );// In sync with everyone
+  // });
+  // useEffect(function () {
+  //   console.log(
+  //     "it will render only one time when browser paint initially on starting of application"
+  //   );
+  // }, []); //// Empty dependency array i.e it is not depending on an state changes
+
+  // console.log("i will render, i don't care");
+
   return (
     <>
       <Navbar>
         <Logo />
-        <Search />
+        <Search query={query} setQuery={setQuery} />
         <Result movies={movies} />
       </Navbar>
       <Main>
         <LeftBox>
           {/* {isLoad ? <Loader /> : <LeftMovieList movies={movies} />} */}
           {isLoad && <Loader />}
-          {!isLoad && !error && <LeftMovieList movies={movies} />}
+          {!isLoad && !error && (
+            <LeftMovieList
+              movies={movies}
+              onSelectId={onSelectId}
+              selectId={selectId}
+            />
+          )}
           {error && <ErrorMessage error={error} />}
         </LeftBox>
-        <RightBox />
+        <RightBox selectId={selectId} onCloseDetails={onCloseDetails} />
       </Main>
     </>
   );
@@ -127,8 +172,7 @@ function Logo() {
   );
 }
 
-function Search() {
-  const [query, setQuery] = useState("");
+function Search({ query, setQuery }) {
   return (
     <input
       className="search"
@@ -154,7 +198,7 @@ function Main({ children }) {
 }
 
 ///////////////////////////
-function RightBox() {
+function RightBox({ selectId, onCloseDetails }) {
   const [watched, setWatched] = useState([]);
   const [isOpen2, setIsOpen2] = useState(true);
 
@@ -166,16 +210,31 @@ function RightBox() {
       >
         {isOpen2 ? "–" : "+"}
       </button>
-      {isOpen2 && (
+      {selectId ? (
+        <MovieDetails selectId={selectId} onCloseDetails={onCloseDetails} />
+      ) : (
         <>
-          <Summary watched={watched} />
-          <WatchedMovieList watched={watched} />
+          {isOpen2 && (
+            <>
+              <Summary watched={watched} />
+              <WatchedMovieList watched={watched} />
+            </>
+          )}
         </>
       )}
     </div>
   );
 }
 
+function MovieDetails({ selectId, onCloseDetails }) {
+  return (
+    <div>
+      <button className="btn-back" onClick={onCloseDetails}>
+        &larr;
+      </button>
+    </div>
+  );
+}
 function Summary({ watched }) {
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
   const avgUserRating = average(watched.map((movie) => movie.userRating));
@@ -255,19 +314,25 @@ function LeftBox({ children }) {
   );
 }
 
-function LeftMovieList({ movies }) {
+function LeftMovieList({ movies, onSelectId }) {
   return (
-    <ul className="list">
+    <ul className="list list-movies">
       {movies?.map((movie) => (
-        <LeftMovieListItem movie={movie} key={movie.imdbID} />
+        <LeftMovieListItem
+          movie={movie}
+          key={movie.imdbID}
+          onSelectId={onSelectId}
+        />
       ))}
     </ul>
   );
 }
 
-function LeftMovieListItem({ movie }) {
+function LeftMovieListItem({ movie, onSelectId }) {
+  // const [selectId, setSelectedId] = useState(null);
+
   return (
-    <li>
+    <li onClick={() => onSelectId(movie.imdbID)}>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
       <h3>{movie.Title}</h3>
       <div>
