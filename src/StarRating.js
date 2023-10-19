@@ -22,7 +22,7 @@ export default function StarRating({
   maxRating = 5,
   color = "#fcc432",
   size = 30,
-  ratingDefault = 3,
+  ratingDefault = 0,
   className = "",
   messages = [],
   setState,
