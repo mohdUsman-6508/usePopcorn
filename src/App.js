@@ -289,6 +289,22 @@ function MovieDetails({ selectId, onCloseDetails, onWatchedMovie, watched }) {
 
   useEffect(
     function () {
+      function callback(e) {
+        if (e.code === "Escape") {
+          onCloseDetails();
+        }
+      }
+
+      document.addEventListener("keydown", callback);
+      return function () {
+        document.removeEventListener("keydown", callback);
+      };
+    },
+    [onCloseDetails]
+  );
+
+  useEffect(
+    function () {
       async function getMovieDeatail() {
         setLoading(true);
         const res = await fetch(
