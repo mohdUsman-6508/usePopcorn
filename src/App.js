@@ -81,11 +81,15 @@ export default function App() {
   /////////////useEffect
   useEffect(
     function () {
+      const controller = new AbortController();
+
       async function getMovies() {
         try {
           setIsLoad(true);
+          setError("");
           const res = await fetch(
-            `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`
+            `http://www.omdbapi.com/?apikey=${KEY}&s=${query}`,
+            { signal: controller.signal }
           );
 
           if (!res.ok) throw new Error("something went wrong!");
@@ -93,12 +97,13 @@ export default function App() {
 
           if (data.Response === "False") throw new Error("Movie not found!");
           setMovies(data.Search);
+          setError("");
 
           // .then((res) => res.json())
           // .then((data) => setMovies(data.Search));
         } catch (err) {
           // console.log(err.message);
-          setError(err.message);
+          if (err.name !== "AbortError") setError(err.message);
         } finally {
           setIsLoad(false);
           setError("");
@@ -112,6 +117,10 @@ export default function App() {
       }
 
       getMovies();
+
+      return function () {
+        controller.abort();
+      };
     },
     [query]
   );
@@ -296,6 +305,18 @@ function MovieDetails({ selectId, onCloseDetails, onWatchedMovie, watched }) {
     [selectId]
   );
 
+  useEffect(
+    function () {
+      if (!title) return;
+      document.title = `${title}`;
+
+      return function () {
+        document.title = "usePopcorn";
+        // console.log(`${title}leanUp fn`);
+      }; ////cleanup function
+    },
+    [title]
+  );
   function handleAdd() {
     const movieObj = {
       imdbID: selectId,
